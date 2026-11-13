@@ -1,0 +1,10 @@
+sku;titulo;preco;estoque;tipo;imagem_url
+CAM-001;Camiseta Básica Preta;69,90;30;Camisetas;https://exemplo.com/img/cam001.jpg
+CAM-002;Camiseta Básica Branca;59,90;12;Camisetas;
+BON-001;Boné Aba Reta;79,90;10;Acessórios;https://exemplo.com/img/bon001.jpg
+CAM-001;Camiseta Duplicada;49,90;5;Camisetas;
+MOL-001;;120,00;7;Moletons;
+MOL-002;Moletom Canguru;-10;3;Moletons;
+CAN-001;Caneca Preta;29,90;abc;Casa;
+MEI-001;Meia Esportiva;19,999;40;Acessórios;http://exemplo.com/meia.jpg
+ab;Chaveiro;9,90;100;Acessórios;
