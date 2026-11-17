@@ -2,9 +2,10 @@ from functools import lru_cache
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 
-from store_ops.api.modelos import ProdutoOut
+from store_ops.api.modelos import ProdutoOut, ResumoPedidosOut
 from store_ops.api.servico import estoque_baixo, listar_todas_variantes
 from store_ops.shopify_client import ShopifyClient, ShopifyErro
+from store_ops.api.pedidos import listar_pedidos, resumir_pedidos
 
 app = FastAPI(title="Store Ops API", version="0.2.0")
 
@@ -66,3 +67,11 @@ def listar_estoque_baixo(
     except ShopifyErro:
         raise HTTPException(status_code=502, detail="Não foi possível consultar a Shopify")
     return estoque_baixo(variantes, ate)
+
+@app.get("/pedidos/resumo", response_model=ResumoPedidosOut)
+def resumo_pedidos(dias: int = Query(30, ge=1, le=60), cliente=Depends(obter_cliente)):
+    try:
+        pedidos = listar_pedidos(cliente, dias)
+    except ShopifyErro:
+        raise HTTPException(status_code=502, detail="Não foi possível consultar a Shopify")
+    return resumir_pedidos(pedidos, dias)
