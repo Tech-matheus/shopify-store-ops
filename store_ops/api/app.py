@@ -6,6 +6,8 @@ from store_ops.api.modelos import ProdutoOut, ResumoPedidosOut
 from store_ops.api.servico import estoque_baixo, listar_todas_variantes
 from store_ops.shopify_client import ShopifyClient, ShopifyErro
 from store_ops.api.pedidos import listar_pedidos, resumir_pedidos
+from fastapi import Response
+from store_ops.api.relatorio import gerar_relatorio
 
 app = FastAPI(title="Store Ops API", version="0.2.0")
 
@@ -75,3 +77,20 @@ def resumo_pedidos(dias: int = Query(30, ge=1, le=60), cliente=Depends(obter_cli
     except ShopifyErro:
         raise HTTPException(status_code=502, detail="Não foi possível consultar a Shopify")
     return resumir_pedidos(pedidos, dias)
+
+@app.get("/relatorio.xlsx")
+def relatorio_excel(
+    dias: int = Query(30, ge=1, le=60),
+    ate: int = Query(5, ge=0, le=100000),
+    cliente=Depends(obter_cliente),
+):
+    try:
+        resumo = resumir_pedidos(listar_pedidos(cliente, dias), dias)
+        baixos = estoque_baixo(listar_todas_variantes(cliente), ate)
+    except ShopifyErro:
+        raise HTTPException(status_code=502, detail="Não foi possível consultar a Shopify")
+    return Response(
+        content=gerar_relatorio(resumo, baixos),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="relatorio-loja.xlsx"'},
+    )
