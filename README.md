@@ -40,7 +40,7 @@ CSV  ->  validate rows  ->  look up each SKU in the store  ->  plan  ->  execute
 ```
 python -m venv venv
 venv\Scripts\activate
-pip install requests python-dotenv pytest
+pip install -r requirements.txt
 ```
 
 Create a `.env` file in the project root (it is ignored by Git):
@@ -94,3 +94,39 @@ python -m pytest -q
 - Product images in the spreadsheet are validated but not imported yet.
 - No automatic retry when Shopify rate limits requests. This is fine for small spreadsheets, but would be needed for large catalogs.
 - User-facing messages are in Portuguese.
+
+## Store Ops API (FastAPI)
+
+A small read-only API on top of the same Shopify store. It answers the questions a store owner asks every day, and exports an Excel report.
+
+| Endpoint | What it does |
+| --- | --- |
+| `GET /saude` | Health check |
+| `GET /produtos?limite=20` | Product list: SKU, title, status, price, stock |
+| `GET /estoque/baixo?ate=5` | Active, stock-tracked products at or below a stock level |
+| `GET /pedidos/resumo?dias=30` | Orders, revenue, average ticket, items sold and top 5 products for the last N days (max 60) |
+| `GET /relatorio.xlsx?dias=30&ate=5` | Excel report with 3 sheets: Summary, Top products, Low stock |
+
+### Run it
+
+```
+pip install -r requirements.txt
+uvicorn store_ops.api.app:app --reload
+```
+
+Then open `http://127.0.0.1:8000/docs` for the interactive documentation.
+
+### Design notes
+
+- Read-only: the API never changes the store.
+- Cancelled orders are counted separately and excluded from revenue.
+- No customer personal data is read or stored: only totals, quantities and product names. The app only needs protected customer data access level 1.
+- Pagination with cursors, so stores with more than 100 products are handled (up to 1000 variants).
+- If Shopify fails, the API answers `502` without leaking internal details.
+- The Shopify client is injected, so tests run with fake clients and never touch the real store.
+
+### Limitations
+
+- Orders are limited to the last 60 days (the default window for the `read_orders` scope).
+- Product list and low stock look at up to 1000 variants.
+- Gift cards and other items without stock tracking are not listed as low stock.
